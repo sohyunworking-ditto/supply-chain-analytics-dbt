@@ -2,3 +2,7 @@
 pymssql>=2.3
 pandas>=2.2
 pyarrow>=17
+
+# transform / publish
+dbt-duckdb>=1.9
+google-cloud-bigquery>=3.25
