@@ -1,0 +1,325 @@
+models:
+- name: stg_wwi__buying_groups
+  description: "구매 그룹 (체인 본사 단위)."
+  columns:
+  - name: buying_group_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+  - name: valid_from
+    description: "원천 시스템 버전의 유효 시작 시각 (업무 시점)."
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
+- name: stg_wwi__cities
+  description: 도시. 위치는 WKT 문자열입니다.
+  columns:
+  - name: city_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+  - name: state_province_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__state_provinces')"
+          field: state_province_id
+  - name: valid_from
+    description: "원천 시스템 버전의 유효 시작 시각 (업무 시점)."
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
+- name: stg_wwi__customer_categories
+  description: 고객 분류.
+  columns:
+  - name: customer_category_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+  - name: valid_from
+    description: "원천 시스템 버전의 유효 시작 시각 (업무 시점)."
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
+- name: stg_wwi__customer_transactions
+  description: "고객 거래 (송장, 수금). 청구 고객 기준이며 금액 부호는 송장 +, 수금 - 입니다."
+  columns:
+  - name: customer_transaction_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+  - name: customer_id
+    data_tests:
+    - not_null
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__customers')"
+          field: customer_id
+  - name: transaction_type_id
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - 1
+          - 2
+          - 3
+          - 4
+          - 13
+  - name: invoice_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__invoices')"
+          field: invoice_id
+  - name: transaction_date
+    data_tests:
+    - not_null
+  - name: transaction_amount
+    description: "세금 포함 거래 금액. 송장 +, 수금·지급 -."
+  - name: outstanding_balance
+    description: 거래별 미결 잔액.
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
+- name: stg_wwi__customers
+  description: "고객. 리플레이 시점에 유효했던 버전입니다. 매출채권과 신용한도는 청구 고객(bill_to_customer_id) 기준입니다."
+  columns:
+  - name: customer_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+  - name: bill_to_customer_id
+    description: 청구 고객. 매출채권·신용한도의 기준 고객입니다.
+    data_tests:
+    - not_null
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__customers')"
+          field: customer_id
+  - name: customer_category_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__customer_categories')"
+          field: customer_category_id
+  - name: buying_group_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__buying_groups')"
+          field: buying_group_id
+  - name: credit_limit
+    description: "신용한도. NULL이면 한도 없음. 매년 7/1에 바뀌는 고객이 있습니다 (snapshot 대상)."
+  - name: valid_from
+    description: "원천 시스템 버전의 유효 시작 시각 (업무 시점)."
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
+- name: stg_wwi__invoice_lines
+  description: "판매 송장 라인. extended_price = quantity × unit_price + tax_amount 입니다."
+  columns:
+  - name: invoice_line_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+  - name: invoice_id
+    data_tests:
+    - not_null
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__invoices')"
+          field: invoice_id
+  - name: stock_item_id
+    data_tests:
+    - not_null
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__stock_items')"
+          field: stock_item_id
+  - name: line_profit
+    description: "라인 매출총이익 (원천 계산값)."
+  - name: extended_price
+    description: 세금 포함 라인 금액.
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
+- name: stg_wwi__invoices
+  description: 판매 송장 헤더. 주문 1건당 송장 1건입니다.
+  columns:
+  - name: invoice_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+  - name: customer_id
+    data_tests:
+    - not_null
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__customers')"
+          field: customer_id
+  - name: bill_to_customer_id
+    description: 청구 고객. 매출채권·신용한도의 기준 고객입니다.
+    data_tests:
+    - not_null
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__customers')"
+          field: customer_id
+  - name: order_id
+    data_tests:
+    - not_null
+    - unique
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__orders')"
+          field: order_id
+  - name: invoice_date
+    data_tests:
+    - not_null
+  - name: confirmed_delivery_at
+    description: 고객 수령 확인 시각. 정시 배송 판정에 씁니다.
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
+- name: stg_wwi__order_lines
+  description: 고객 주문 라인.
+  columns:
+  - name: order_line_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+  - name: order_id
+    data_tests:
+    - not_null
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__orders')"
+          field: order_id
+  - name: stock_item_id
+    data_tests:
+    - not_null
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__stock_items')"
+          field: stock_item_id
+  - name: quantity
+    data_tests:
+    - not_null
+  - name: picked_quantity
+    description: 실제 피킹 수량. quantity보다 작으면 부분 충족.
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
+- name: stg_wwi__orders
+  description: 고객 주문 헤더. backorder_order_id는 이 주문의 미충족분으로 새로 만든 주문입니다.
+  columns:
+  - name: order_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+  - name: customer_id
+    data_tests:
+    - not_null
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__customers')"
+          field: customer_id
+  - name: salesperson_person_id
+    data_tests:
+    - not_null
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__people')"
+          field: person_id
+  - name: backorder_order_id
+    description: 이 주문의 미충족분으로 만든 후속 주문.
+  - name: order_date
+    data_tests:
+    - not_null
+  - name: expected_delivery_date
+    data_tests:
+    - not_null
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
+- name: stg_wwi__people
+  description: "사람 (직원, 영업사원, 고객·공급사 담당자). 로그인·설정 정보는 제외했습니다."
+  columns:
+  - name: person_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+  - name: valid_from
+    description: "원천 시스템 버전의 유효 시작 시각 (업무 시점)."
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
+- name: stg_wwi__state_provinces
+  description: "주(州). 경계 폴리곤은 제외했습니다."
+  columns:
+  - name: state_province_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+  - name: valid_from
+    description: "원천 시스템 버전의 유효 시작 시각 (업무 시점)."
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
+- name: stg_wwi__stock_item_holdings
+  description: "품목별 현재고 (이력 없음, 추출 시점 값). 거래 이력과 맞지 않습니다 (DQ-01)."
+  columns:
+  - name: stock_item_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__stock_items')"
+          field: stock_item_id
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
+- name: stg_wwi__stock_item_transactions
+  description: 재고 입출고. 수량 단위는 낱개이며 출고는 음수입니다.
+  columns:
+  - name: stock_item_transaction_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+  - name: stock_item_id
+    data_tests:
+    - not_null
+    - relationships:
+        arguments:
+          to: "ref('stg_wwi__stock_items')"
+          field: stock_item_id
+  - name: transaction_type_id
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - 9
+          - 10
+          - 11
+          - 12
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
+- name: stg_wwi__stock_items
+  description: 품목. 마케팅·검색용 텍스트는 제외했습니다.
+  columns:
+  - name: stock_item_id
+    description: 기본키.
+    data_tests:
+    - unique
+    - not_null
+  - name: supplier_id
+    data_tests:
+    - not_null
+  - name: valid_from
+    description: "원천 시스템 버전의 유효 시작 시각 (업무 시점)."
+  - name: _loaded_at
+    description: 리플레이 적재 시각. 소스 freshness와 증분 처리 기준.
