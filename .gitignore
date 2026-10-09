@@ -1,0 +1,20 @@
+# secrets
+.env
+*.json.key
+gcp-*.json
+
+# data (재현 가능: extract/README.md)
+data/
+extract/backup/
+
+# python
+.venv/
+__pycache__/
+
+# dbt
+target/
+dbt_packages/
+logs/
+
+# claude
+.claude/

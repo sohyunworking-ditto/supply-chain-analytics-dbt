@@ -1,0 +1,4 @@
+# extract (SQL Server → Parquet)
+pymssql>=2.3
+pandas>=2.2
+pyarrow>=17
