@@ -1,0 +1,12 @@
+# 비밀값이 없어서 레포에 둡니다. dbt는 현재 디렉터리의 profiles.yml을 먼저 찾습니다.
+supply_chain_analytics:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', 'warehouse/wwi.duckdb') }}"
+      threads: 4
+    ci:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', 'warehouse/ci.duckdb') }}"
+      threads: 4

@@ -1,0 +1,44 @@
+sources:
+  - name: wwi
+    description: >
+      Wide World Importers OLTP 원천. loader/replay.py가 DuckDB raw 스키마에 적재합니다.
+      모든 테이블에 _loaded_at(적재 시각)과 _batch_until(배치 기준일)이 붙습니다.
+    schema: raw
+    config:
+      loaded_at_field: _loaded_at
+      freshness:
+        warn_after: {count: 7, period: day}
+        error_after: {count: 30, period: day}
+    tables:
+      - name: application__cities
+        description: "마스터. 배치 시점에 유효했던 버전으로 통째로 교체됩니다."
+      - name: application__state_provinces
+        description: "마스터. 배치 시점에 유효했던 버전으로 통째로 교체됩니다."
+      - name: application__people
+        description: "마스터. 배치 시점에 유효했던 버전으로 통째로 교체됩니다."
+      - name: sales__customers
+        description: "마스터. 배치 시점에 유효했던 버전으로 통째로 교체됩니다."
+      - name: sales__customer_categories
+        description: "마스터. 배치 시점에 유효했던 버전으로 통째로 교체됩니다."
+      - name: sales__buying_groups
+        description: "마스터. 배치 시점에 유효했던 버전으로 통째로 교체됩니다."
+      - name: sales__orders
+        description: "트랜잭션. 업무 일자 기준으로 배치마다 추가됩니다."
+      - name: sales__order_lines
+        description: "트랜잭션. 업무 일자 기준으로 배치마다 추가됩니다."
+      - name: sales__invoices
+        description: "트랜잭션. 업무 일자 기준으로 배치마다 추가됩니다."
+      - name: sales__invoice_lines
+        description: "트랜잭션. 업무 일자 기준으로 배치마다 추가됩니다."
+      - name: sales__customer_transactions
+        description: "트랜잭션. 업무 일자 기준으로 배치마다 추가됩니다."
+      - name: warehouse__stock_items
+        description: "마스터. 배치 시점에 유효했던 버전으로 통째로 교체됩니다."
+      - name: warehouse__stock_item_holdings
+        description: "이력이 없는 테이블. 배치마다 전체 교체됩니다."
+      - name: warehouse__stock_item_transactions
+        description: "트랜잭션. 업무 일자 기준으로 배치마다 추가됩니다."
+      - name: sales__customers_archive
+        description: "고객 이력 (시스템 버전 관리 테이블). 배치 시점까지 확정된 이력만 있습니다. snapshot 검증에만 씁니다."
+        config:
+          freshness: null
