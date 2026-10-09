@@ -18,3 +18,7 @@ logs/
 
 # claude
 .claude/
+# duckdb
+warehouse/
+*.duckdb
+*.duckdb.wal
